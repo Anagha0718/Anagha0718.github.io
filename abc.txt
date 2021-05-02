@@ -1,0 +1,45 @@
+package main
+
+import (
+	 "net/http"
+	 "log"
+	 "fmt"
+	 "io/ioutil"
+	 "html"
+)
+
+func main() {
+	http.HnadleFunc("/", foo)
+	http.ListenAndServe(":8080", nil)
+}
+
+func foo(w http.ResponseWriter, req *http.Request) {
+	var s string
+	if req.Method == http.MethodPost {
+		f, _, err := req.FormFile("usrfile")
+		if err != nil {
+			log.Println(err)
+        	http.Error(w, " error uploading file", http.StatusInternalServerError)
+			return
+		}
+		defer f.close()
+
+		bs, err := ioutil.ReadAll(f)
+		if err != nil{
+			log.Println(err)
+			http.Error(w, " Error reading file", http.StatusInternalServerError)
+		}
+
+		s = string(bs)
+	}
+
+	w.Header().Set("CONTENT-TYPE", "text/html; charset=UTF-8")
+	io.WriteString(w, '<form action="/" method="POST" enctype ="multipart/form-data"> 
+	upload a file<br>
+	<input type="file" name ="usrfile">
+	<br><input type ="submit">
+	</form>
+	<br>
+	<br>
+	<h1>%v</h1>'+s)
+}
